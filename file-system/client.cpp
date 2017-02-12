@@ -5,8 +5,8 @@
 
 #define NAME_REQ 0
 #define LS_REQ 1
-#define RD_REQ 2
-#define CR_REQ 3
+#define GET_REQ 2
+#define SEND_REQ 3
 #define RM_REQ 4
 
 using namespace std;
@@ -35,12 +35,13 @@ string GetName(socket& s) {
     m << req.dump();
     s.send(m);
 
+    cout << "Waiting response" << endl;
     message ans;
     s.receive(ans);
     string _res;
     ans >> _res;
     json res = json::parse(_res);
-    cout << res.dump(2) << endl;
+
     ok = res["res"] == "OK";
     if (!ok) {
       cout << "Invalid name" << endl;
@@ -62,12 +63,12 @@ int GetOption(string& opt) {
 }
 
 void ListFiles(string &user, socket& s) {
-  json load;
-  load["type"] = LS_REQ;
-  load["user"] = user;
+  json req;
+  req["type"] = LS_REQ;
+  req["user"] = user;
 
   message m;
-  m << load.dump();
+  m << req.dump();
   s.send(m);
 
   message ans;
@@ -76,19 +77,57 @@ void ListFiles(string &user, socket& s) {
   ans >> _res;
   json res = json::parse(_res);
 
-  for (auto &f : res["data"]) {
-    cout << f << endl;
+  if (res["res"] == "OK") {
+    cout << "Your files are:" << endl;
+    for (auto &f : res["data"]) {
+      cout << f << endl;
+    }
+  } else {
+    cout << res["res"] << endl;
   }
+
+  Pause();
+}
+
+void GetFile(string &user, socket& s) {
+  // TODO: Get files from server
+}
+
+void SendFile(string &user, socket& s) {
+  string filename;
+  cin >> filename;
+
+  json req;
+  req["type"] = SEND_REQ;
+  req["user"] = user;
+
+  message m;
+  m << req.dump();
+  s.send(m);
+
+  message ans;
+  s.receive(ans);
+  string _res;
+  ans >> _res;
+  json res = json::parse(_res);
+
+  if (res["res"] == "OK") {
+  } else {
+    cout << res["res"] << endl;
+  }
+
+  Pause();
 }
 
 bool ExecuteOpt(int opt, string &user, socket& s) {
   switch (opt) {
     case LS_REQ:
-      // ListFiles(user, s);
+      ListFiles(user, s);
       break;
-    case RD_REQ:
+    case GET_REQ:
       break;
-    case CR_REQ:
+    case SEND_REQ:
+      SendFile(user, s);
       break;
     case RM_REQ:
      break;

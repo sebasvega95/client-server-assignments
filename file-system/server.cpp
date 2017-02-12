@@ -5,8 +5,8 @@
 
 #define NAME_REQ 0
 #define LS_REQ 1
-#define RD_REQ 2
-#define CR_REQ 3
+#define GET_REQ 2
+#define SEND_REQ 3
 #define RM_REQ 4
 
 using namespace std;
@@ -29,12 +29,10 @@ void UpdateDb() {
 
 void InitUser(string& user, socket &s) {
   json res;
-  cout << res.dump(2) << endl;
 
-  if (db[user]) {
+  if (db[user] != nullptr) {
     res["res"] = "OK";
   } else {
-    string user;
     regex r("[a-zA-Z]\\w*");
     if (regex_match(user, r)) {
       db[user] = json::array();
@@ -51,19 +49,35 @@ void InitUser(string& user, socket &s) {
   s.send(ans);
 }
 
+void ListFiles(string& user, socket &s) {
+  json res;
+
+  if (db[user] != nullptr) {
+    res["res"] = "OK";
+    res["data"] = db[user];
+  } else {
+    res["res"] = "User does not exist";
+  }
+
+  message ans;
+  ans << res.dump();
+  s.send(ans);
+}
+
 void Serve(int opt, string& user, socket& s) {
   switch (opt) {
     case NAME_REQ:
       InitUser(user, s);
       break;
     case LS_REQ:
+      ListFiles(user, s);
       break;
-    case RD_REQ:
+    case GET_REQ:
       break;
-    case CR_REQ:
+    case SEND_REQ:
       break;
     case RM_REQ:
-     break;
+      break;
     default:
       break;
   }
@@ -75,7 +89,7 @@ void GetReq(socket& s) {
   string _req;
   m >> _req;
   json req = json::parse(_req);
-  cout << req.dump(2) << endl;
+  cout << "Received: " << req.dump(2) << endl;
 
   int opt = req["type"];
   string user = req["user"];
@@ -83,8 +97,8 @@ void GetReq(socket& s) {
 }
 
 int main(int argc, const char *argv[]) {
-  cout << "Init DB" << endl;
   InitDb();
+  cout << "Init DB" << db << endl;
 
   context ctx;
   socket s(ctx, socket_type::rep);
