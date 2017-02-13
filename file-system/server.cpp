@@ -64,7 +64,41 @@ void ListFiles(string& user, socket &s) {
   s.send(ans);
 }
 
-void Serve(int opt, string& user, socket& s) {
+void SendFileToClient(string &user, socket& s) {
+  // TODO: Get files from server
+}
+
+void GetFileFromClient(string &user, string& filename, string& file, socket& s) {
+  json res;
+
+  if (db[user] == nullptr) {
+    res["res"] = "User does not exist";
+  } else {
+    Base64 b64;
+    string out;
+    b64.Decode(file, &out);
+
+    ofstream fout("fs/" + user + "/" + filename);
+    if (!fout) {
+      res["res"] = "Error writing file";
+    } else {
+      fout << out;
+      db[user].push_back(filename);
+      res["res"] = "OK";
+      UpdateDb();
+    }
+    fout.close();
+  }
+
+  message ans;
+  ans << res.dump();
+  s.send(ans);
+}
+
+void Serve(json &req, socket& s) {
+  int opt = req["type"];
+  string user = req["user"];
+
   switch (opt) {
     case NAME_REQ:
       InitUser(user, s);
@@ -74,8 +108,12 @@ void Serve(int opt, string& user, socket& s) {
       break;
     case GET_REQ:
       break;
-    case SEND_REQ:
+    case SEND_REQ: {
+      string filename = req["filename"];
+      string file = req["file"];
+      GetFileFromClient(user, filename, file, s);
       break;
+    }
     case RM_REQ:
       break;
     default:
@@ -91,9 +129,7 @@ void GetReq(socket& s) {
   json req = json::parse(_req);
   cout << "Received: " << req.dump(2) << endl;
 
-  int opt = req["type"];
-  string user = req["user"];
-  Serve(opt, user, s);
+  Serve(req, s);
 }
 
 int main(int argc, const char *argv[]) {

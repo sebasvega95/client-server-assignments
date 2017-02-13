@@ -8,6 +8,7 @@
 #define GET_REQ 2
 #define SEND_REQ 3
 #define RM_REQ 4
+#define FILE_NOT_FOUND "@"
 
 using namespace std;
 using namespace zmqpp;
@@ -24,7 +25,6 @@ string GetName(socket& s) {
 
   bool ok;
   do {
-    system("clear");
     cout << "Username: ";
     getline(cin, name);
     json req;
@@ -44,7 +44,7 @@ string GetName(socket& s) {
 
     ok = res["res"] == "OK";
     if (!ok) {
-      cout << "Invalid name" << endl;
+      cout << "Invalid name" << endl << endl;
       // Pause();
     }
   } while(!ok);
@@ -53,6 +53,7 @@ string GetName(socket& s) {
 }
 
 int GetOption(string& opt) {
+  cout << ">>>>" << opt << endl;
   stringstream ss(opt);
   int o;
   ss >> o;
@@ -96,7 +97,7 @@ void GetFile(string &user, socket& s) {
 string ReadFileBase64(string& filename) {
   ifstream fin(filename, ios::binary);
   if (!fin) {
-    return "";
+    return FILE_NOT_FOUND;
   }
 
   stringstream oss;
@@ -110,15 +111,22 @@ string ReadFileBase64(string& filename) {
   return out;
 }
 
-void SendFile(string &user, socket& s) {
+void SendFileToServer(string &user, socket& s) {
+  cout << "Enter filename: ";
   string filename;
   cin >> filename;
+
+  string file = ReadFileBase64(filename);
+  if (file == FILE_NOT_FOUND) {
+    cout << "File not found" << endl;
+    return;
+  }
 
   json req;
   req["type"] = SEND_REQ;
   req["user"] = user;
-
-  string file = ReadFileBase64(filename);
+  req["filename"] = basename(filename.c_str());
+  req["file"] = file;
 
   message m;
   m << req.dump();
@@ -131,6 +139,7 @@ void SendFile(string &user, socket& s) {
   json res = json::parse(_res);
 
   if (res["res"] == "OK") {
+    cout << "File created!" << endl;
   } else {
     cout << res["res"] << endl;
   }
@@ -146,7 +155,7 @@ bool ExecuteOpt(int opt, string &user, socket& s) {
     case GET_REQ:
       break;
     case SEND_REQ:
-      SendFile(user, s);
+      SendFileToServer(user, s);
       break;
     case RM_REQ:
      break;
@@ -164,8 +173,7 @@ bool ExecuteOpt(int opt, string &user, socket& s) {
 
 bool PrintMenu(string &user, socket& s) {
   // system("clear");
-
-  cout << "Welcome " << user << " to SuperFancy FileSystem (SFFS)" << endl;
+  cout << endl << endl;
   cout << "Please enter your choice :)" << endl;
   cout << "1. List your files" << endl;
   cout << "2. Get a file" << endl;
@@ -175,7 +183,7 @@ bool PrintMenu(string &user, socket& s) {
   cout << "> ";
 
   string _opt;
-  cin >> _opt;
+  getline(cin, _opt);
   int opt = GetOption(_opt);
   return ExecuteOpt(opt, user, s);
 }
@@ -188,6 +196,8 @@ int main(int argc, const char *argv[]) {
 
   string user = GetName(s);
 
+  cout << endl;
+  cout << "Welcome " << user << " to SuperFancy FileSystem (SFFS)" << endl;
   bool cont;
   do {
     cont = PrintMenu(user, s);
