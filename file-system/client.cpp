@@ -45,7 +45,7 @@ string GetName(socket& s) {
     ok = res["res"] == "OK";
     if (!ok) {
       cout << "Invalid name" << endl;
-      Pause();
+      // Pause();
     }
   } while(!ok);
 
@@ -86,11 +86,28 @@ void ListFiles(string &user, socket& s) {
     cout << res["res"] << endl;
   }
 
-  Pause();
+  // Pause();
 }
 
 void GetFile(string &user, socket& s) {
   // TODO: Get files from server
+}
+
+string ReadFileBase64(string& filename) {
+  ifstream fin(filename, ios::binary);
+  if (!fin) {
+    return "";
+  }
+
+  stringstream oss;
+  oss << fin.rdbuf();
+  fin.close();
+
+  Base64 b64;
+  string in = oss.str(), out;
+  b64.Encode(in, &out);
+
+  return out;
 }
 
 void SendFile(string &user, socket& s) {
@@ -100,6 +117,8 @@ void SendFile(string &user, socket& s) {
   json req;
   req["type"] = SEND_REQ;
   req["user"] = user;
+
+  string file = ReadFileBase64(filename);
 
   message m;
   m << req.dump();
@@ -116,7 +135,7 @@ void SendFile(string &user, socket& s) {
     cout << res["res"] << endl;
   }
 
-  Pause();
+  // Pause();
 }
 
 bool ExecuteOpt(int opt, string &user, socket& s) {
@@ -136,7 +155,7 @@ bool ExecuteOpt(int opt, string &user, socket& s) {
       break;
     default:
       cout << "Invalid option" << endl;
-      Pause();
+      // Pause();
       break;
   }
 
@@ -144,7 +163,7 @@ bool ExecuteOpt(int opt, string &user, socket& s) {
 }
 
 bool PrintMenu(string &user, socket& s) {
-  system("clear");
+  // system("clear");
 
   cout << "Welcome " << user << " to SuperFancy FileSystem (SFFS)" << endl;
   cout << "Please enter your choice :)" << endl;
