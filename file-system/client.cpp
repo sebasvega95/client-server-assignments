@@ -122,7 +122,7 @@ void GetFileFromServer(string &user, socket& s) {
   }
 }
 
-void SendFileToServer(string &user, socket& s) {
+void SendFileToServer(string& user, socket& s) {
   cout << "Enter filename: ";
   string filename;
   cin >> filename;
@@ -158,6 +158,33 @@ void SendFileToServer(string &user, socket& s) {
   // Pause();
 }
 
+void RemoveFile(string& user, socket& s) {
+  cout << "Enter filename: ";
+  string filename;
+  cin >> filename;
+
+  json req;
+  req["type"] = RM_REQ;
+  req["user"] = user;
+  req["filename"] = filename;
+
+  message m;
+  m << req.dump();
+  s.send(m);
+
+  message ans;
+  s.receive(ans);
+  string _res;
+  ans >> _res;
+  json res = json::parse(_res);
+
+  if (res["res"] == "OK") {
+    cout << "File removed!" << endl;
+  } else {
+    cout << res["res"] << endl;
+  }
+}
+
 bool ExecuteOpt(int opt, string &user, socket& s) {
   switch (opt) {
     case LS_REQ:
@@ -170,7 +197,8 @@ bool ExecuteOpt(int opt, string &user, socket& s) {
       SendFileToServer(user, s);
       break;
     case RM_REQ:
-     break;
+      RemoveFile(user, s);
+      break;
     case 0:
       cout << endl << "Bye bye!!" << endl;
       return false;
