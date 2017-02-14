@@ -114,8 +114,31 @@ void GetFileFromClient(string& user, string& filename, string& file, socket& s) 
   s.send(ans);
 }
 
-void RemoveFile(string& user, socket& s) {
-  // TODO: Remove file
+void RemoveFile(string& user, string& filename ,socket& s) {
+  json res;
+
+  if (db[user] == nullptr) {
+    res["res"] = "User does not exist";
+  } else {
+    vector<string> _f = db[user];
+    if (find(_f.begin(), _f.end(), filename) == _f.end()) {
+      res["res"] = "File does not exist";
+    } else {
+      string _filename = "fs/" + user + "/" + filename;
+      int removed = remove(_filename.c_str());
+      if (removed != 0) {
+        res["res"] = "Error removing file!";
+      } else {
+        db[user].erase(remove(db[user].begin(), db[user].end(), filename), db[user].end());
+        UpdateDb();
+        res["res"] = "File removed!";
+      }
+    }
+  }
+
+  message ans;
+  ans << res.dump();
+  s.send(ans);
 }
 
 void Serve(json& req, socket& s) {
@@ -142,7 +165,7 @@ void Serve(json& req, socket& s) {
     }
     case RM_REQ: {
       string filename = req["filename"];
-      SendFileToClient(user, filename, s);
+      RemoveFile(user, filename, s);
       break;
     }
     default:
