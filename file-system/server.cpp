@@ -2,6 +2,7 @@
 #include <zmqpp/zmqpp.hpp>
 #include "lib/json.hpp"
 #include "lib/base64.hpp"
+#include "lib/file.hpp"
 
 #define NAME_REQ 0
 #define LS_REQ 1
@@ -64,30 +65,25 @@ void ListFiles(string& user, socket &s) {
   s.send(ans);
 }
 
-void SendFileToClient(string &user, socket& s) {
-  // TODO: Get files from server
-}
-
-void GetFileFromClient(string &user, string& filename, string& file, socket& s) {
+void SendFileToClient(string& user, string& filename, socket& s) {
   json res;
 
   if (db[user] == nullptr) {
     res["res"] = "User does not exist";
   } else {
-    Base64 b64;
-    string out;
-    b64.Decode(file, &out);
-
-    ofstream fout("fs/" + user + "/" + filename);
-    if (!fout) {
-      res["res"] = "Error writing file";
+    vector<string> _f = db[user];
+    if (find(_f.begin(), _f.end(), filename) == _f.end()) {
+      res["res"] = "File does not exist";
     } else {
-      fout << out;
-      db[user].push_back(filename);
-      res["res"] = "OK";
-      UpdateDb();
+      string _filename = "fs/" + user + "/" + filename;
+      string file = ReadFileBase64(_filename);
+      if (file == FILE_NOT_FOUND) {
+        res["res"] = "File does not exist, but it's in DB";
+      } else {
+        res["res"] = "OK";
+        res["file"] = file;
+      }
     }
-    fout.close();
   }
 
   message ans;
@@ -95,7 +91,34 @@ void GetFileFromClient(string &user, string& filename, string& file, socket& s) 
   s.send(ans);
 }
 
-void Serve(json &req, socket& s) {
+void GetFileFromClient(string& user, string& filename, string& file, socket& s) {
+  json res;
+
+  if (db[user] == nullptr) {
+    res["res"] = "User does not exist";
+  } else {
+    string _filename = "fs/" + user + "/" + filename;
+    bool save = SaveFileBase64(_filename, file);
+
+    if (!save) {
+      res["res"] = "Error writing file";
+    } else {
+      db[user].push_back(filename);
+      res["res"] = "OK";
+      UpdateDb();
+    }
+  }
+
+  message ans;
+  ans << res.dump();
+  s.send(ans);
+}
+
+void RemoveFile(string& user, socket& s) {
+  // TODO: Remove file
+}
+
+void Serve(json& req, socket& s) {
   int opt = req["type"];
   string user = req["user"];
 
@@ -106,16 +129,22 @@ void Serve(json &req, socket& s) {
     case LS_REQ:
       ListFiles(user, s);
       break;
-    case GET_REQ:
+    case GET_REQ: {
+      string filename = req["filename"];
+      SendFileToClient(user, filename, s);
       break;
+    }
     case SEND_REQ: {
       string filename = req["filename"];
       string file = req["file"];
       GetFileFromClient(user, filename, file, s);
       break;
     }
-    case RM_REQ:
+    case RM_REQ: {
+      string filename = req["filename"];
+      SendFileToClient(user, filename, s);
       break;
+    }
     default:
       break;
   }
@@ -127,7 +156,7 @@ void GetReq(socket& s) {
   string _req;
   m >> _req;
   json req = json::parse(_req);
-  cout << "Received: " << req.dump(2) << endl;
+  cout << "Received request " << req["type"] << endl;
 
   Serve(req, s);
 }
@@ -144,26 +173,6 @@ int main(int argc, const char *argv[]) {
   while (true) {
     GetReq(s);
   }
-
-  // cout << "Waiting for message..." << endl;
-  // message m;
-  // s.receive(m);
-  // cout << "Message received!" << endl;
-  //
-  // string text;
-  // m >> text;
-  // auto r = json::parse(text);
-  //
-  // Base64 b64;
-  // string in = r["file"], out;
-  // b64.Decode(in, &out);
-  //
-  // string filename = r["name"];
-  // ofstream fout("fs/" + filename);
-  // fout << out;
-  // fout.close();
-  //
-  // cout << "File written!" << endl;
 
   return 0;
 }

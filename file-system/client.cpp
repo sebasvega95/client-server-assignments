@@ -1,14 +1,14 @@
 #include <bits/stdc++.h>
 #include <zmqpp/zmqpp.hpp>
 #include "lib/json.hpp"
-#include "lib/base64.hpp"
+#include "lib/file.hpp"
 
 #define NAME_REQ 0
 #define LS_REQ 1
 #define GET_REQ 2
 #define SEND_REQ 3
 #define RM_REQ 4
-#define FILE_NOT_FOUND "@"
+
 
 using namespace std;
 using namespace zmqpp;
@@ -53,7 +53,6 @@ string GetName(socket& s) {
 }
 
 int GetOption(string& opt) {
-  cout << ">>>>" << opt << endl;
   stringstream ss(opt);
   int o;
   ss >> o;
@@ -90,25 +89,37 @@ void ListFiles(string &user, socket& s) {
   // Pause();
 }
 
-void GetFile(string &user, socket& s) {
-  // TODO: Get files from server
-}
+void GetFileFromServer(string &user, socket& s) {
+  cout << "Enter filename: ";
+  string filename;
+  cin >> filename;
 
-string ReadFileBase64(string& filename) {
-  ifstream fin(filename, ios::binary);
-  if (!fin) {
-    return FILE_NOT_FOUND;
+  json req;
+  req["type"] = GET_REQ;
+  req["user"] = user;
+  req["filename"] = filename;
+
+  message m;
+  m << req.dump();
+  s.send(m);
+
+  message ans;
+  s.receive(ans);
+  string _res;
+  ans >> _res;
+  json res = json::parse(_res);
+
+  if (res["res"] == "OK") {
+    string file = res["file"];
+    bool save = SaveFileBase64(filename, file);
+    if (!save) {
+      cout << "Error saving file" << endl;
+    } else {
+      cout << "File received succesfully" << endl;
+    }
+  } else {
+    cout << res["res"] << endl;
   }
-
-  stringstream oss;
-  oss << fin.rdbuf();
-  fin.close();
-
-  Base64 b64;
-  string in = oss.str(), out;
-  b64.Encode(in, &out);
-
-  return out;
 }
 
 void SendFileToServer(string &user, socket& s) {
@@ -153,6 +164,7 @@ bool ExecuteOpt(int opt, string &user, socket& s) {
       ListFiles(user, s);
       break;
     case GET_REQ:
+      GetFileFromServer(user, s);
       break;
     case SEND_REQ:
       SendFileToServer(user, s);
@@ -160,6 +172,7 @@ bool ExecuteOpt(int opt, string &user, socket& s) {
     case RM_REQ:
      break;
     case 0:
+      cout << endl << "Bye bye!!" << endl;
       return false;
       break;
     default:
@@ -183,8 +196,9 @@ bool PrintMenu(string &user, socket& s) {
   cout << "> ";
 
   string _opt;
-  getline(cin, _opt);
+  cin >> _opt;
   int opt = GetOption(_opt);
+  cout << endl;
   return ExecuteOpt(opt, user, s);
 }
 
@@ -202,32 +216,6 @@ int main(int argc, const char *argv[]) {
   do {
     cont = PrintMenu(user, s);
   } while(cont);
-
-  // context ctx;
-  // socket s(ctx, socket_type::req);
-  // s.connect("tcp://localhost:5555");
-  //
-  // json load;
-  // load["user"] = "leiver";
-  // load["name"] = "copy.mp3";
-  //
-  // ifstream fin("fs/Super Mario World Music - Title Theme.mp3", ios::binary);
-  // if (!fin) {
-  //   cout << "Mucha loca" << endl;
-  //   return 0;
-  // }
-  // stringstream oss;
-  // oss << fin.rdbuf();
-  // fin.close();
-  //
-  // Base64 b64;
-  // string in = oss.str(), out;
-  // b64.Encode(in, &out);
-  // load["file"] = out;
-  //
-  // message m;
-  // m << load.dump();
-  // s.send(m);
 
   return 0;
 }
