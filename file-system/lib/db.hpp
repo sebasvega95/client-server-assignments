@@ -11,7 +11,17 @@ json db;
 
 void InitDb() {
   ifstream fin("db.json");
-  fin >> db;
+  if (!fin) {
+    ofstream fout("db.json");
+    fout << "{}" << endl;
+    fout.close();
+
+    system("rm -rf fs");
+    system("mkdir fs");
+    db = json::object();
+  } else {
+    fin >> db;
+  }
   fin.close();
 }
 
