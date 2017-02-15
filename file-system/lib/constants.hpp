@@ -1,0 +1,5 @@
+const int NAME_REQ = 0;
+const int LS_REQ = 1;
+const int GET_REQ = 2;
+const int SEND_REQ = 3;
+const int RM_REQ = 4;

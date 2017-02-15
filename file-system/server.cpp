@@ -3,12 +3,7 @@
 #include "lib/json.hpp"
 #include "lib/base64.hpp"
 #include "lib/file.hpp"
-
-#define NAME_REQ 0
-#define LS_REQ 1
-#define GET_REQ 2
-#define SEND_REQ 3
-#define RM_REQ 4
+#include "lib/constants.hpp"
 
 using namespace std;
 using namespace zmqpp;
