@@ -21,6 +21,7 @@ void InitUser(string& user, socket &s) {
   json res;
 
   if (db[user] != nullptr) {
+    system(("mkdir fs/" + user).c_str());
     res["res"] = "OK";
   } else {
     regex r("[a-zA-Z]\\w*");
