@@ -1,4 +1,4 @@
-CC = g++ -std=c++11 -Wall
+CC = g++ -O2 -std=c++11 -Wall
 LDFLAGS = -lzmqpp -lzmq
 
 all: server client

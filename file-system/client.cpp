@@ -2,22 +2,11 @@
 #include <zmqpp/zmqpp.hpp>
 #include "lib/json.hpp"
 #include "lib/file.hpp"
-
-#define NAME_REQ 0
-#define LS_REQ 1
-#define GET_REQ 2
-#define SEND_REQ 3
-#define RM_REQ 4
-
+#include "lib/constants.hpp"
 
 using namespace std;
 using namespace zmqpp;
 using json = nlohmann::json;
-
-void Pause() {
-  cout << "Press any key to continue...";
-  cin.ignore().get();
-}
 
 string GetName(socket& s) {
   regex r("[a-zA-Z]\\w*");
@@ -45,7 +34,6 @@ string GetName(socket& s) {
     ok = res["res"] == "OK";
     if (!ok) {
       cout << "Invalid name" << endl << endl;
-      // Pause();
     }
   } while(!ok);
 
@@ -85,8 +73,6 @@ void ListFiles(string &user, socket& s) {
   } else {
     cout << res["res"] << endl;
   }
-
-  // Pause();
 }
 
 void GetFileFromServer(string &user, socket& s) {
@@ -205,7 +191,6 @@ bool ExecuteOpt(int opt, string &user, socket& s) {
       break;
     default:
       cout << "Invalid option" << endl;
-      // Pause();
       break;
   }
 
@@ -213,7 +198,6 @@ bool ExecuteOpt(int opt, string &user, socket& s) {
 }
 
 bool PrintMenu(string &user, socket& s) {
-  // system("clear");
   cout << endl << endl;
   cout << "Please enter your choice :)" << endl;
   cout << "1. List your files" << endl;
