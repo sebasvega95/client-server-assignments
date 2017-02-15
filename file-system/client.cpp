@@ -95,19 +95,22 @@ bool PrintMenu(string &user, socket& s) {
 }
 
 int main(int argc, const char *argv[]) {
-  string ip = "localhost", port = "5555";
-  context ctx;
-  socket s(ctx, socket_type::req);
-  s.connect("tcp://" + ip + ":" + port);
+  if (argc != 2) {
+    cout << "Usage: " << argv[0] << " <server-ip>" << endl;
+  } else {
+    string ip = argv[1], port = "5555";
+    context ctx;
+    socket s(ctx, socket_type::req);
+    s.connect("tcp://" + ip + ":" + port);
 
-  string user = GetName(s);
-
-  cout << endl;
-  cout << "Welcome " << user << " to SuperFancy FileSystem (SFFS)" << endl;
-  bool cont;
-  do {
-    cont = PrintMenu(user, s);
-  } while(cont);
+    string user = GetName(s);
+    cout << endl;
+    cout << "Welcome " << user << " to SuperFancy FileSystem (SFFS)" << endl;
+    bool cont;
+    do {
+      cont = PrintMenu(user, s);
+    } while(cont);
+  }
 
   return 0;
 }
