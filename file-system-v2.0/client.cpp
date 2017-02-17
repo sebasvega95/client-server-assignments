@@ -2,7 +2,6 @@
 #include <zmqpp/zmqpp.hpp>
 #include "lib/client-opts.hpp"
 #include "lib/constants.hpp"
-#include "lib/file.hpp"
 #include "lib/json.hpp"
 
 using namespace std;

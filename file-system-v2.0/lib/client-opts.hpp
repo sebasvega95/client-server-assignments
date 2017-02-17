@@ -41,32 +41,36 @@ void GetFileFromServer(string &user, socket& s) {
   string filename;
   cin >> filename;
 
-  json req;
-  req["type"] = GET_REQ;
-  req["user"] = user;
-  req["filename"] = filename;
+  do {
+    json req;
+    req["type"] = GET_REQ;
+    req["user"] = user;
+    req["filename"] = filename;
+    req["curPos"] = cur_pos;
 
-  message m;
-  m << req.dump();
-  s.send(m);
+    message m;
+    m << req.dump();
+    s.send(m);
 
-  message ans;
-  s.receive(ans);
-  string _res;
-  ans >> _res;
-  json res = json::parse(_res);
+    message ans;
+    s.receive(ans);
+    string _res;
+    ans >> _res;
+    json res = json::parse(_res);
 
-  if (res["res"] == "OK") {
-    string file = res["file"];
-    bool save = SaveFileBase64(filename, file);
-    if (!save) {
-      cout << "Error saving file" << endl;
+    if (res["res"] == "OK") {
+      string file = res["file"];
+      bool save = SaveFileBase64(filename, file);
+      if (!save) {
+        cout << "Error saving file" << endl;
+      } else {
+        cout << "File received succesfully" << endl;
+      }
     } else {
-      cout << "File received succesfully" << endl;
+      cout << res["res"] << endl;
     }
-  } else {
-    cout << res["res"] << endl;
-  }
+  } while ();
+
 }
 
 void SendFileToServer(string& user, socket& s) {
@@ -74,34 +78,43 @@ void SendFileToServer(string& user, socket& s) {
   string filename;
   cin >> filename;
 
-  string file = ReadFileBase64(filename);
-  if (file == FILE_NOT_FOUND) {
-    cout << "File not found" << endl;
-    return;
-  }
+  string server_response = "File created!";
+  int cur_pos = 0;
+  bool finished;
+  do {
+    json open_file = ReadFileBase64(filename, cur_pos);
+    if (open_file["error"] != nullptr) {
+      cout << open_file["message"] << endl;
+      return;
+    }
 
-  json req;
-  req["type"] = SEND_REQ;
-  req["user"] = user;
-  req["filename"] = basename(filename.c_str());
-  req["file"] = file;
+    string file = open_file["file"];
+    cur_pos = open_file["curPos"];
+    finished = open_file["finished"];
 
-  message m;
-  m << req.dump();
-  s.send(m);
+    json req;
+    req["type"] = SEND_REQ;
+    req["user"] = user;
+    req["filename"] = basename(filename.c_str());
+    req["file"] = file;
 
-  message ans;
-  s.receive(ans);
-  string _res;
-  ans >> _res;
-  json res = json::parse(_res);
+    message m;
+    m << req.dump();
+    s.send(m);
 
-  if (res["res"] == "OK") {
-    cout << "File created!" << endl;
-  } else {
-    cout << res["res"] << endl;
-  }
+    message ans;
+    s.receive(ans);
+    string _res;
+    ans >> _res;
+    json res = json::parse(_res);
 
+    if (res["res"] != "OK") {
+      server_response = res["res"];
+      break;
+    }
+  } while (!finished);
+
+  cout << server_response << endl;
 }
 
 void RemoveFile(string& user, socket& s) {
