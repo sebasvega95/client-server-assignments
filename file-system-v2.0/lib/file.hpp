@@ -19,16 +19,18 @@ int FileSize(string& filename) {
 }
 
 json ReadFileBase64(string& filename, int cur_pos) {
-  FILE *pFile  = fopen(filename.c_str(), "rb");;
+  FILE *pFile  = fopen(filename.c_str(), "rb");
   char* buffer = (char*) malloc(CHUNK_SIZE * sizeof(char));
   json response;
 
   if (buffer == NULL) {
+    cout << "mem :(" << endl;
     response = {
       {"error", true},
       {"message", "Memory error"}
     };
   } else if (pFile == NULL) {
+    cout << "file :(" << endl;
     response = {
       {"error", true},
       {"message", "File not found"}
@@ -47,10 +49,11 @@ json ReadFileBase64(string& filename, int cur_pos) {
       {"curPos", cur_pos},
       {"finished", finished}
     };
+
+    fclose(pFile);
+    free(buffer);
   }
 
-  fclose(pFile);
-  free(buffer);
   return response;
 }
 

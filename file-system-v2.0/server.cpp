@@ -50,7 +50,7 @@ void GetReq(socket& s) {
   string _req;
   m >> _req;
   json req = json::parse(_req);
-  cout << "Received request " << req["type"] << endl;
+  cout << "Received request " << req["type"] << " from " << req["user"] << endl;
 
   Serve(req, s);
 }
