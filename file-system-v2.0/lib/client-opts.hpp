@@ -66,11 +66,10 @@ void GetFileFromServer(string &user, socket& s) {
       first_time = false;
       finished = res["finished"];
       cur_pos = res["curPos"];
-      cout << "Downloading... " << cur_pos / (double) res["fileSize"] << endl;
       if (!save) {
         cout << "Error saving file" << endl;
       } else {
-        cout << "File received succesfully" << endl;
+        cout << "Downloading... " << 100 * cur_pos / (double) res["fileSize"] << endl;
       }
     } else {
       cout << res["res"] << endl;
@@ -118,7 +117,7 @@ void SendFileToServer(string& user, socket& s) {
       server_response = res["res"];
       break;
     } else {
-      cout << "Uploading... " << (double) cur_pos / file_size << endl;
+      cout << "Uploading... " << 100 * (double) cur_pos / file_size << endl;
     }
   } while (!finished);
 
