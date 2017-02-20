@@ -23,13 +23,15 @@ void Serve(json& req, socket& s) {
       break;
     case GET_REQ: {
       string filename = req["filename"];
-      SendFileToClient(user, filename, s);
+      int cur_pos = req["curPos"];
+      SendFileToClient(user, filename, cur_pos, s);
       break;
     }
     case SEND_REQ: {
       string filename = req["filename"];
       string file = req["file"];
-      GetFileFromClient(user, filename, file, s);
+      bool first_time = req["firstTime"];
+      GetFileFromClient(user, filename, file, first_time, s);
       break;
     }
     case RM_REQ: {

@@ -41,6 +41,8 @@ void GetFileFromServer(string &user, socket& s) {
   string filename;
   cin >> filename;
 
+  bool first_time = true, finished;
+  int cur_pos = 0;
   do {
     json req;
     req["type"] = GET_REQ;
@@ -60,7 +62,11 @@ void GetFileFromServer(string &user, socket& s) {
 
     if (res["res"] == "OK") {
       string file = res["file"];
-      bool save = SaveFileBase64(filename, file);
+      bool save = SaveFileBase64(filename, file, first_time);
+      first_time = false;
+      finished = res["finished"];
+      cur_pos = res["curPos"];
+      cout << "Downloading... " << cur_pos / (double) res["fileSize"] << endl;
       if (!save) {
         cout << "Error saving file" << endl;
       } else {
@@ -68,9 +74,9 @@ void GetFileFromServer(string &user, socket& s) {
       }
     } else {
       cout << res["res"] << endl;
+      break;
     }
-  } while ();
-
+  } while (!finished);
 }
 
 void SendFileToServer(string& user, socket& s) {
@@ -79,7 +85,7 @@ void SendFileToServer(string& user, socket& s) {
   cin >> filename;
 
   string server_response = "File created!";
-  int cur_pos = 0;
+  int cur_pos = 0, file_size = FileSize(filename);
   bool finished;
   do {
     json open_file = ReadFileBase64(filename, cur_pos);
@@ -87,21 +93,21 @@ void SendFileToServer(string& user, socket& s) {
       cout << open_file["message"] << endl;
       return;
     }
-
     string file = open_file["file"];
-    cur_pos = open_file["curPos"];
-    finished = open_file["finished"];
 
     json req;
     req["type"] = SEND_REQ;
     req["user"] = user;
     req["filename"] = basename(filename.c_str());
     req["file"] = file;
+    req["firstTime"] = (cur_pos == 0);
+
+    cur_pos = open_file["curPos"];
+    finished = open_file["finished"];
 
     message m;
     m << req.dump();
     s.send(m);
-
     message ans;
     s.receive(ans);
     string _res;
@@ -111,6 +117,8 @@ void SendFileToServer(string& user, socket& s) {
     if (res["res"] != "OK") {
       server_response = res["res"];
       break;
+    } else {
+      cout << "Uploading... " << (double) cur_pos / file_size << endl;
     }
   } while (!finished);
 

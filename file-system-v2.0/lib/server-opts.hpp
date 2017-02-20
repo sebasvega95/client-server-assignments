@@ -51,8 +51,9 @@ void ListFiles(string& user, socket &s) {
   Send(res, s);
 }
 
-void SendFileToClient(string& user, string& filename, socket& s) {
+void SendFileToClient(string& user, string& filename, int cur_pos, socket& s) {
   json res;
+  string _filename;
 
   if (db[user] == nullptr) {
     res["res"] = "User does not exist";
@@ -61,13 +62,16 @@ void SendFileToClient(string& user, string& filename, socket& s) {
     if (find(_f.begin(), _f.end(), filename) == _f.end()) {
       res["res"] = "File does not exist";
     } else {
-      string _filename = "fs/" + user + "/" + filename;
-      string file = ReadFileBase64(_filename);
-      if (file == FILE_NOT_FOUND) {
-        res["res"] = "File does not exist, but it's in DB";
+      _filename = "fs/" + user + "/" + filename;
+      json file = ReadFileBase64(_filename, cur_pos);
+      if (file["error"] != nullptr) {
+        res["res"] = file["message"];
       } else {
         res["res"] = "OK";
-        res["file"] = file;
+        res["curPos"] = file["curPos"];
+        res["file"] = file["file"];
+        res["fileSize"] = FileSize(_filename);
+        res["finished"] = file["finished"];
       }
     }
   }
@@ -75,19 +79,21 @@ void SendFileToClient(string& user, string& filename, socket& s) {
   Send(res, s);
 }
 
-void GetFileFromClient(string& user, string& filename, string& file, socket& s) {
+void GetFileFromClient(string& user, string& filename, string& file, bool first_time, socket& s) {
   json res;
 
   if (db[user] == nullptr) {
     res["res"] = "User does not exist";
   } else {
     string _filename = "fs/" + user + "/" + filename;
-    bool save = SaveFileBase64(_filename, file);
+    bool save = SaveFileBase64(_filename, file, first_time);
 
     if (!save) {
       res["res"] = "Error writing file";
     } else {
-      db[user].push_back(filename);
+      vector<string> _f = db[user];
+      if (find(_f.begin(), _f.end(), filename) == _f.end())
+        db[user].push_back(filename);
       res["res"] = "OK";
       UpdateDb();
     }

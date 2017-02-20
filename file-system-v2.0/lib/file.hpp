@@ -5,85 +5,43 @@
 #include "constants.hpp"
 #include "base64.hpp"
 #include "json.hpp"
-#define FILE_NOT_FOUND "@"
 
 using namespace std;
 using json = nlohmann::json;
 
-// class ReadFileBase64 {
-// private:
-//   string filename;
-//   int cur_pos;
-//   bool finished;
-// public:
-//   ReadFileBase64(string _filename) : filename(_filename) {}
-//
-//   string operator()() {
-//     ifstream fin(filename, ios::binary);
-//     if (!fin) {
-//       return FILE_NOT_FOUND;
-//     }
-//
-//     char *buffer = new char[CHUNK_SIZE];
-//     fin.seekg(cur_pos);
-//     fin.read(buffer, CHUNK_SIZE);
-//     cur_pos += CHUNK_SIZE;
-//     finished = (bool) fin;
-//
-//     Base64 b64;
-//     string out;
-//     b64.Encode(buffer, &out);
-//
-//     return out;
-//   }
-//
-//   bool is_finished() {
-//     return finished;
-//   }
-// };
+int FileSize(string& filename) {
+  ifstream fin(filename, ios::binary);
+  fin.seekg(0, fin.end);
+  int length = fin.tellg();
+  fin.close();
 
-// class SaveFileBase64 {
-// private:
-//   string filename;
-//   bool is_first;
-//   public:
-//     SaveFileBase64(string _filename) : filename(_filename), is_first(true) {}
-//
-//     void operator()() {
-//       Base64 b64;
-//       string out;
-//       b64.Decode(file, &out);
-//       ofstream fout(filename);
-//       if (!fout) {
-//         return false;
-//       }
-//
-//       fout << out;
-//       fout.close();
-//       return true;
-//     }
-// };
+  return length;
+}
 
 json ReadFileBase64(string& filename, int cur_pos) {
-  ifstream fin(filename, ios::binary);
-
+  FILE *pFile  = fopen(filename.c_str(), "rb");;
+  char* buffer = (char*) malloc(CHUNK_SIZE * sizeof(char));
   json response;
-  if (!fin) {
+
+  if (buffer == NULL) {
+    response = {
+      {"error", true},
+      {"message", "Memory error"}
+    };
+  } else if (pFile == NULL) {
     response = {
       {"error", true},
       {"message", "File not found"}
     };
   } else {
-    char *buffer = new char[CHUNK_SIZE];
-    fin.seekg(cur_pos);
-    fin.read(buffer, CHUNK_SIZE);
-    cur_pos += CHUNK_SIZE;
-    bool finished = (bool) fin;
+    fseek(pFile, cur_pos, SEEK_SET);
+    int read = fread(buffer, 1, CHUNK_SIZE, pFile);
+    cur_pos += read;
+    bool finished = (bool) feof(pFile);
 
     Base64 b64;
     string out;
-    b64.Encode(buffer, &out);
-
+    b64.Encode(string(buffer, read), &out);
     response = {
       {"file", out},
       {"curPos", cur_pos},
@@ -91,6 +49,8 @@ json ReadFileBase64(string& filename, int cur_pos) {
     };
   }
 
+  fclose(pFile);
+  free(buffer);
   return response;
 }
 
