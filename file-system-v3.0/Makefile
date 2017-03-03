@@ -8,7 +8,7 @@ server: server.cpp
 ifeq ($(C_ENV), local)
 	$(CC) -o server.o server.cpp $(LOCAL_FLAGS) $(LDFLAGS)
 else
-		$(CC) -o server.o server.cpp $(LDFLAGS)
+	$(CC) -o server.o server.cpp $(LDFLAGS)
 endif
 
 client: client.cpp
