@@ -1,7 +1,8 @@
 #ifndef FILE_HPP
 #define FILE_HPP
 
-#include <bits/stdc++.h>
+#include <string>
+#include <fstream>
 #include "constants.hpp"
 #include "base64.hpp"
 #include "json.hpp"
@@ -24,13 +25,11 @@ json ReadFileBase64(string& filename, int cur_pos) {
   json response;
 
   if (buffer == NULL) {
-    cout << "mem :(" << endl;
     response = {
       {"error", true},
       {"message", "Memory error"}
     };
   } else if (pFile == NULL) {
-    cout << "file :(" << endl;
     response = {
       {"error", true},
       {"message", "File not found"}

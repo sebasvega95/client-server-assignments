@@ -1,7 +1,11 @@
 #ifndef CLIENT_OPTS_HPP
 #define CLIENT_OPTS_HPP
 
-#include <bits/stdc++.h>
+#include <iostream>
+#include <string>
+#include <cstring>
+#include <libgen.h>
+#include <regex>
 #include <zmqpp/zmqpp.hpp>
 #include "constants.hpp"
 #include "file.hpp"
@@ -97,7 +101,9 @@ void SendFileToServer(string& user, socket& s) {
     json req;
     req["type"] = SEND_REQ;
     req["user"] = user;
-    req["filename"] = basename(filename.c_str());
+    char _fn[256];
+    strcpy(_fn, filename.c_str());
+    req["filename"] = basename(_fn);
     req["file"] = file;
     req["firstTime"] = (cur_pos == 0);
 

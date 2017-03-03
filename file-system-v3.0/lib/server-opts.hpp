@@ -1,7 +1,9 @@
 #ifndef SERVER_OPTS_HPP
 #define SERVER_OPTS_HPP
 
-#include <bits/stdc++.h>
+#include <string>
+#include <regex>
+#include <vector>
 #include <zmqpp/zmqpp.hpp>
 #include "db.hpp"
 #include "file.hpp"
