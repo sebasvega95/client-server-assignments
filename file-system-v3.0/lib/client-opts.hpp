@@ -88,7 +88,7 @@ void SendFileToServer(string& user, socket& s) {
   cin >> filename;
 
   string server_response = "File created!";
-  int cur_pos = 0, file_size = FileSize(filename);
+  int cur_pos = 0, file_size = GetFileSize(filename);
   bool finished;
   do {
     json open_file = ReadFileBase64(filename, cur_pos);

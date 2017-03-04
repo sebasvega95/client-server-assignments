@@ -23,8 +23,12 @@ int GetDiskSpace() {
   return 100 - atoi(line_p);
 }
 
-int FileSize(string& filename) {
+int GetFileSize(string& filename) {
   ifstream fin(filename, ios::binary);
+  if (!fin) {
+    return 0;
+  }
+
   fin.seekg(0, fin.end);
   int length = fin.tellg();
   fin.close();

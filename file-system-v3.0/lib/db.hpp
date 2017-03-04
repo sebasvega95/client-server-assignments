@@ -13,7 +13,7 @@ void InitDb() {
   ifstream fin("db.json");
   if (!fin) {
     ofstream fout("db.json");
-    fout << R"({"users":{},"servers":{}})" << endl;
+    fout << R"({"users":{}})" << endl;
     fout.close();
 
     int err;

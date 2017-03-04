@@ -14,6 +14,8 @@ using namespace std;
 using namespace zmqpp;
 using json = nlohmann::json;
 
+int cur_load; // Current load for this server
+
 void InitUser(string& user, socket &client_socket, socket &broker_socket) {
   json res;
 
@@ -43,19 +45,18 @@ void InitUser(string& user, socket &client_socket, socket &broker_socket) {
   Send(res, client_socket);
 }
 
-// TODO Remove this one, it's the broker's job
-void ListFiles(string& user, socket &client_socket, socket &broker_socket) {
-  json res;
-
-  if (db["users"][user] != nullptr) {
-    res["res"] = "OK";
-    res["data"] = db["users"][user];
-  } else {
-    res["res"] = "User does not exist";
-  }
-
-  Send(res, client_socket);
-}
+// void ListFiles(string& user, socket &client_socket, socket &broker_socket) {
+//   json res;
+//
+//   if (db["users"][user] != nullptr) {
+//     res["res"] = "OK";
+//     res["data"] = db["users"][user];
+//   } else {
+//     res["res"] = "User does not exist";
+//   }
+//
+//   Send(res, client_socket);
+// }
 
 void SendFileToClient(string &user, string &filename, int cur_pos, socket &client_socket, socket &broker_socket) {
   json res;
@@ -76,7 +77,7 @@ void SendFileToClient(string &user, string &filename, int cur_pos, socket &clien
         res["res"] = "OK";
         res["curPos"] = file["curPos"];
         res["file"] = file["file"];
-        res["fileSize"] = FileSize(_filename);
+        res["fileSize"] = GetFileSize(_filename);
         res["finished"] = file["finished"];
       }
     }

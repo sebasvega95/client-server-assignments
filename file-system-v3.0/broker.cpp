@@ -13,13 +13,14 @@ using json = nlohmann::json;
 
 MinIndexedPQ server_queue(MAX_NUM_SERVERS);
 int num_servers;
+json servers;
 
 void ListFiles(string& user, socket &s) {
   json res;
 
-  if (db[user] != nullptr) {
+  if (db["users"][user] != nullptr) {
     res["res"] = "OK";
-    res["data"] = db[user];
+    res["data"] = db["users"][user];
   } else {
     res["res"] = "User does not exist";
   }
@@ -77,6 +78,7 @@ int main(int argc, char *argv[]) {
   InitDb();
   cout << "Init DB " << db << endl;
   num_servers = 0;
+  servers = {};
 
   context ctx;
   socket s(ctx, socket_type::rep);
