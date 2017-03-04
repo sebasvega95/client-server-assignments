@@ -12,5 +12,6 @@ Depends on
 To compile: `make`
 
 Then, to run:
-- Server: `./server.o`
-- Client: `./client.o <server-ip>`. `server-ip` can be `localhost` to test locally
+- Broker: `./broker.o`
+- Server: `./server.o  <broker-ip> <server-ip> <server-port>`.`broker-ip` and `server-ip` can be `localhost` to test locally
+- Client: `./client.o <broker-ip>`. `broker-ip` can be `localhost` to test locally
