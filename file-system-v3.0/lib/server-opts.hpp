@@ -2,7 +2,6 @@
 #define SERVER_OPTS_HPP
 
 #include <string>
-#include <regex>
 #include <zmqpp/zmqpp.hpp>
 #include "db.hpp"
 #include "dispatcher.hpp"
@@ -15,48 +14,6 @@ using json = nlohmann::json;
 
 size_t cur_load; // Current load for this server
 string dir;
-
-void InitUser(string& user, socket &client_socket, socket &broker_socket) {
-  json res;
-
-  if (db["users"][user] != nullptr) {
-    int err = system(("mkdir fs/" + user).c_str());
-    if (err == -1) {
-      res["res"] = "Filesystem error";
-    } else {
-      res["res"] = "OK";
-    };
-  } else {
-    regex r("[a-zA-Z]\\w*");
-    if (regex_match(user, r)) {
-      db["users"][user] = {};
-      int err = system(("mkdir fs/" + user).c_str());
-      if (err == -1) {
-        res["res"] = "Filesystem error";
-      } else {
-        res["res"] = "OK";
-        UpdateDb();
-      }
-    } else {
-      res["res"] = "Invalid name";
-    }
-  }
-
-  Send(res, client_socket);
-}
-
-// void ListFiles(string& user, socket &client_socket, socket &broker_socket) {
-//   json res;
-//
-//   if (db["users"][user] != nullptr) {
-//     res["res"] = "OK";
-//     res["data"] = db["users"][user];
-//   } else {
-//     res["res"] = "User does not exist";
-//   }
-//
-//   Send(res, client_socket);
-// }
 
 void SendFileToClient(string &user, string &filename, int cur_pos, socket &client_socket, socket &broker_socket) {
   json res;

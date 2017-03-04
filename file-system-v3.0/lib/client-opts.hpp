@@ -15,7 +15,7 @@ using namespace std;
 using namespace zmqpp;
 using json = nlohmann::json;
 
-void ListFiles(string &user, socket& s) {
+void ListFiles(string &user, socket &s) {
   json req;
   req["type"] = LS_REQ;
   req["user"] = user;
@@ -40,11 +40,7 @@ void ListFiles(string &user, socket& s) {
   }
 }
 
-void GetFileFromServer(string &user, socket& s) {
-  cout << "Enter filename: ";
-  string filename;
-  cin >> filename;
-
+void GetFileFromServer(string &user, string &filename, socket &s) {
   bool first_time = true, finished;
   int cur_pos = 0;
   do {
@@ -82,11 +78,7 @@ void GetFileFromServer(string &user, socket& s) {
   } while (!finished);
 }
 
-void SendFileToServer(string& user, socket& s) {
-  cout << "Enter filename: ";
-  string filename;
-  cin >> filename;
-
+void SendFileToServer(string &user, string &filename, socket &s) {
   string server_response = "File created!";
   int cur_pos = 0, file_size = GetFileSize(filename);
   bool finished;
@@ -130,11 +122,7 @@ void SendFileToServer(string& user, socket& s) {
   cout << server_response << endl;
 }
 
-void RemoveFile(string& user, socket& s) {
-  cout << "Enter filename: ";
-  string filename;
-  cin >> filename;
-
+void RemoveFile(string &user, string &filename, socket &s) {
   json req;
   req["type"] = RM_REQ;
   req["user"] = user;

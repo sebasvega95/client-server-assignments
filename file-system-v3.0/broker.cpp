@@ -1,4 +1,5 @@
 #include <iostream>
+#include <regex>
 #include <zmqpp/zmqpp.hpp>
 #include "lib/constants.hpp"
 #include "lib/db.hpp"
@@ -32,6 +33,27 @@ size_t GetServerPriority(size_t load, size_t disk_space) {
   return (size_t) (0.5 * load + 0.5 * disk_space);
 }
 
+void InitUser(string& user, socket &s) {
+  json res;
+
+  if (db["users"][user] != nullptr) {
+    system(("mkdir fs/" + user).c_str());
+    res["res"] = "OK";
+  } else {
+    regex r("[a-zA-Z]\\w*");
+    if (regex_match(user, r)) {
+      db["users"][user] = {};
+      system(("mkdir fs/" + user).c_str());
+      res["res"] = "OK";
+      UpdateDb();
+    } else {
+      res["res"] = "Invalid name";
+    }
+  }
+
+  Send(res, s);
+}
+
 void HandleClient(json& req, socket& s) {
   string user = req["user"];
   if (req["type"] == LS_REQ) {
@@ -43,6 +65,8 @@ void HandleClient(json& req, socket& s) {
     res["res"] = "OK";
     res["server"] = server;
     Send(res, s);
+  } else if (req["type"] == NAME_REQ) {
+    InitUser(user, s);
   } else {
     string filename = req["filename"];
     json res;

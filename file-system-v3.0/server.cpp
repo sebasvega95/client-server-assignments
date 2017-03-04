@@ -31,9 +31,9 @@ void RespondToReq(json& req, socket &client_socket, socket &broker_socket) {
   string user = req["user"];
 
   switch (opt) {
-    case NAME_REQ:
-      InitUser(user, client_socket, broker_socket);
-      break;
+    // case NAME_REQ:
+    //   InitUser(user, client_socket, broker_socket);
+    //   break;
     // case LS_REQ:
     //   ListFiles(user, client_socket, broker_socket);
     //   break;

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <zmqpp/zmqpp.hpp>
+#include "lib/dispatcher.hpp"
 #include "lib/client-opts.hpp"
 #include "lib/constants.hpp"
 #include "lib/json.hpp"
@@ -9,7 +10,7 @@ using namespace std;
 using namespace zmqpp;
 using json = nlohmann::json;
 
-string GetName(socket& s) {
+string GetName(socket &broker_socket) {
   regex r("[a-zA-Z]\\w*");
   string name;
 
@@ -23,11 +24,11 @@ string GetName(socket& s) {
 
     message m;
     m << req.dump();
-    s.send(m);
+    broker_socket.send(m);
 
     cout << "Waiting response" << endl;
     message ans;
-    s.receive(ans);
+    broker_socket.receive(ans);
     string _res;
     ans >> _res;
     json res = json::parse(_res);
@@ -41,7 +42,7 @@ string GetName(socket& s) {
   return name;
 }
 
-int GetOption(string& opt) {
+int GetOption(string &opt) {
   stringstream ss(opt);
   int o;
   ss >> o;
@@ -51,19 +52,42 @@ int GetOption(string& opt) {
   return o;
 }
 
-bool ExecuteOpt(int opt, string &user, socket& s) {
+bool ExecuteOpt(int opt, string &user, socket &broker_socket) {
+  context ctx;
+  socket server_socket(ctx, socket_type::req);
+  string filename;
+
+  if (opt != LS_REQ) {
+    cout << "Enter filename: ";
+    cin >> filename;
+
+    json req;
+    req["type"] = opt;
+    req["user"] = user;
+    req["filename"] = filename;
+
+    Send(req, broker_socket);
+    json res = Receive(broker_socket);
+    if (res["res"] == "OK") {
+      string server_dir = res["server"];
+      server_socket.connect("tcp://" + server_dir);
+    } else {
+      cout << res["res"] << endl;
+    }
+  }
+
   switch (opt) {
     case LS_REQ:
-      ListFiles(user, s);
+      ListFiles(user, broker_socket);
       break;
     case GET_REQ:
-      GetFileFromServer(user, s);
+      GetFileFromServer(user, filename, server_socket);
       break;
     case SEND_REQ:
-      SendFileToServer(user, s);
+      SendFileToServer(user, filename, server_socket);
       break;
     case RM_REQ:
-      RemoveFile(user, s);
+      RemoveFile(user, filename, server_socket);
       break;
     case 0:
       cout << endl << "Bye bye!!" << endl;
@@ -77,7 +101,7 @@ bool ExecuteOpt(int opt, string &user, socket& s) {
   return true;
 }
 
-bool PrintMenu(string &user, socket& s) {
+bool PrintMenu(string &user, socket &broker_socket) {
   cout << endl << endl;
   cout << "Please enter your choice :)" << endl;
   cout << "1. List your files" << endl;
@@ -91,7 +115,7 @@ bool PrintMenu(string &user, socket& s) {
   cin >> _opt;
   int opt = GetOption(_opt);
   cout << endl;
-  return ExecuteOpt(opt, user, s);
+  return ExecuteOpt(opt, user, broker_socket);
 }
 
 int main(int argc, const char *argv[]) {
@@ -100,15 +124,15 @@ int main(int argc, const char *argv[]) {
   } else {
     string ip = argv[1], port = "5555";
     context ctx;
-    socket s(ctx, socket_type::req);
-    s.connect("tcp://" + ip + ":" + port);
+    socket broker_socket(ctx, socket_type::req);
+    broker_socket.connect("tcp://" + ip + ":" + port);
 
-    string user = GetName(s);
+    string user = GetName(broker_socket);
     cout << endl;
     cout << "Welcome " << user << " to SuperFancy FileSystem (SFFS)" << endl;
     bool cont;
     do {
-      cont = PrintMenu(user, s);
+      cont = PrintMenu(user, broker_socket);
     } while(cont);
   }
 
