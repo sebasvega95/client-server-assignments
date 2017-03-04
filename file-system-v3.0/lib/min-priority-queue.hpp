@@ -10,7 +10,8 @@
 #define MIN_PQ_HPP
 
 class MinIndexedPQ {
-    int NMAX, N, *heap, *index, *keys;
+    int NMAX, N, *heap, *index;
+    size_t *keys;
 
     void swap(int i, int j) {
         int t = heap[i]; heap[i] = heap[j]; heap[j] = t;
@@ -42,7 +43,7 @@ public:
     MinIndexedPQ(int NMAX)  {
         this->NMAX = NMAX;
         N = 0;
-        keys = new int[NMAX + 1];
+        keys = new size_t[NMAX + 1];
         heap = new int[NMAX + 1];
         index = new int[NMAX + 1];
         for(int i = 0; i <= NMAX; i++)

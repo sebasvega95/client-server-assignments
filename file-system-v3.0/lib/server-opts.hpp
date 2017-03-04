@@ -3,7 +3,6 @@
 
 #include <string>
 #include <regex>
-#include <vector>
 #include <zmqpp/zmqpp.hpp>
 #include "db.hpp"
 #include "dispatcher.hpp"
@@ -14,7 +13,8 @@ using namespace std;
 using namespace zmqpp;
 using json = nlohmann::json;
 
-int cur_load; // Current load for this server
+size_t cur_load; // Current load for this server
+string dir;
 
 void InitUser(string& user, socket &client_socket, socket &broker_socket) {
   json res;
@@ -29,7 +29,7 @@ void InitUser(string& user, socket &client_socket, socket &broker_socket) {
   } else {
     regex r("[a-zA-Z]\\w*");
     if (regex_match(user, r)) {
-      db["users"][user] = json::array();
+      db["users"][user] = {};
       int err = system(("mkdir fs/" + user).c_str());
       if (err == -1) {
         res["res"] = "Filesystem error";
@@ -65,8 +65,10 @@ void SendFileToClient(string &user, string &filename, int cur_pos, socket &clien
   if (db["users"][user] == nullptr) {
     res["res"] = "User does not exist";
   } else {
-    vector<string> _f = db["users"][user];
-    if (find(_f.begin(), _f.end(), filename) == _f.end()) {
+    // vector<string> _f = db["users"][user];
+    // if (find(_f.begin(), _f.end(), filename) == _f.end()) {
+    //   res["res"] = "File does not exist";
+    if (db["users"][user][filename] == nullptr) {
       res["res"] = "File does not exist";
     } else {
       _filename = "fs/" + user + "/" + filename;
@@ -98,9 +100,12 @@ void GetFileFromClient(string& user, string& filename, string& file, bool first_
     if (!save) {
       res["res"] = "Error writing file";
     } else {
-      vector<string> _f = db["users"][user];
-      if (find(_f.begin(), _f.end(), filename) == _f.end())
-        db["users"][user].push_back(filename);
+      // vector<string> _f = db["users"][user];
+      // if (find(_f.begin(), _f.end(), filename) == _f.end())
+      //   db["users"][user].push_back(filename);
+      if (db["users"][user][filename] == nullptr) {
+        db["users"][user][filename] = dir;
+      }
       res["res"] = "OK";
       UpdateDb();
     }
@@ -115,8 +120,10 @@ void RemoveFile(string& user, string& filename, socket& client_socket, socket &b
   if (db["users"][user] == nullptr) {
     res["res"] = "User does not exist";
   } else {
-    vector<string> _f = db["users"][user];
-    if (find(_f.begin(), _f.end(), filename) == _f.end()) {
+    // vector<string> _f = db["users"][user];
+    // if (find(_f.begin(), _f.end(), filename) == _f.end()) {
+    //   res["res"] = "File does not exist";
+    if (db["users"][user][filename] == nullptr) {
       res["res"] = "File does not exist";
     } else {
       string _filename = "fs/" + user + "/" + filename;

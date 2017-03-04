@@ -14,14 +14,15 @@ using json = nlohmann::json;
 
 void UpdateServerPriority(socket &broker_socket) {
   json req;
-  req["type"] = "update";
+  req["type"] = UPDATE_SERVER_REQ;
+  req["dir"] = dir;
   req["load"] = cur_load;
   req["disk"] = GetDiskSpace();
   Send(req, broker_socket);
 
   json res = Receive(broker_socket);
   if (res["res"] == "OK") {
-    cout << "Broker state updated" << endl;
+    cout << "Broker state updated with load=" << cur_load << " and disk=" << req["disk"] << endl;
   }
 }
 
@@ -39,7 +40,7 @@ void RespondToReq(json& req, socket &client_socket, socket &broker_socket) {
     case GET_REQ: { // Client wants to get a file
       string filename = req["filename"];
       int cur_pos = req["curPos"];
-      int file_size = req["fileSize"];
+      size_t file_size = GetFileSize(filename);
       cur_load += file_size;
       UpdateServerPriority(broker_socket);
       SendFileToClient(user, filename, cur_pos, client_socket, broker_socket);
@@ -51,7 +52,7 @@ void RespondToReq(json& req, socket &client_socket, socket &broker_socket) {
       string filename = req["filename"];
       string file = req["file"];
       bool first_time = req["firstTime"];
-      int file_size = GetFileSize(filename);
+      size_t file_size = req["fileSize"];
       cur_load += file_size;
       UpdateServerPriority(broker_socket);
       GetFileFromClient(user, filename, file, first_time, client_socket, broker_socket);
@@ -81,8 +82,9 @@ void GetReq(socket &client_socket, socket &broker_socket) {
   RespondToReq(req, client_socket, broker_socket);
 }
 
-void Serve(string &port, socket &broker_socket) {
+void Serve(string &ip, string &port, socket &broker_socket) {
   cur_load = 0;
+  dir = ip + ":" + port;
   context ctx;
   socket client_socket(ctx, socket_type::rep);
   client_socket.bind("tcp://*:" + port);
@@ -103,7 +105,7 @@ void ConnectToBroker(string &ip, string &port, socket &broker_socket) {
   json res = Receive(broker_socket);
   if (res["res"] == "OK") {
     cout << "Connected to broker" << endl;
-    Serve(port, broker_socket);
+    Serve(ip, port, broker_socket);
   } else {
     cout << "Couldn't connect to broker" << endl;
     exit(EXIT_FAILURE);
