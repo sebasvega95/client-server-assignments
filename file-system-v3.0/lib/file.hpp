@@ -10,6 +10,19 @@
 using namespace std;
 using json = nlohmann::json;
 
+int GetDiskSpace() {
+  FILE *command = popen(R"(df . | grep -oP '\d+(?=%)')", "r");
+  if (!command) {
+    return -1;
+  }
+
+  char buffer[5];
+  char *line_p = fgets(buffer, sizeof(buffer), command);
+  pclose(command);
+
+  return 100 - atoi(line_p);
+}
+
 int FileSize(string& filename) {
   ifstream fin(filename, ios::binary);
   fin.seekg(0, fin.end);

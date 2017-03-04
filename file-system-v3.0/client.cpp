@@ -96,7 +96,7 @@ bool PrintMenu(string &user, socket& s) {
 
 int main(int argc, const char *argv[]) {
   if (argc != 2) {
-    cout << "Usage: " << argv[0] << " <server-ip>" << endl;
+    cout << "Usage: " << argv[0] << " <broker-ip>" << endl;
   } else {
     string ip = argv[1], port = "5555";
     context ctx;

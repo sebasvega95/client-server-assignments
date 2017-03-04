@@ -6,6 +6,7 @@
 #include <vector>
 #include <zmqpp/zmqpp.hpp>
 #include "db.hpp"
+#include "dispatcher.hpp"
 #include "file.hpp"
 #include "json.hpp"
 
@@ -13,54 +14,57 @@ using namespace std;
 using namespace zmqpp;
 using json = nlohmann::json;
 
-void Send(json& res, socket& s) {
-  message ans;
-  ans << res.dump();
-  s.send(ans);
-}
-
-void InitUser(string& user, socket &s) {
+void InitUser(string& user, socket &client_socket, socket &broker_socket) {
   json res;
 
-  if (db[user] != nullptr) {
-    system(("mkdir fs/" + user).c_str());
-    res["res"] = "OK";
+  if (db["users"][user] != nullptr) {
+    int err = system(("mkdir fs/" + user).c_str());
+    if (err == -1) {
+      res["res"] = "Filesystem error";
+    } else {
+      res["res"] = "OK";
+    };
   } else {
     regex r("[a-zA-Z]\\w*");
     if (regex_match(user, r)) {
-      db[user] = json::array();
-      system(("mkdir fs/" + user).c_str());
-      res["res"] = "OK";
-      UpdateDb();
+      db["users"][user] = json::array();
+      int err = system(("mkdir fs/" + user).c_str());
+      if (err == -1) {
+        res["res"] = "Filesystem error";
+      } else {
+        res["res"] = "OK";
+        UpdateDb();
+      }
     } else {
       res["res"] = "Invalid name";
     }
   }
 
-  Send(res, s);
+  Send(res, client_socket);
 }
 
-void ListFiles(string& user, socket &s) {
+// TODO Remove this one, it's the broker's job
+void ListFiles(string& user, socket &client_socket, socket &broker_socket) {
   json res;
 
-  if (db[user] != nullptr) {
+  if (db["users"][user] != nullptr) {
     res["res"] = "OK";
-    res["data"] = db[user];
+    res["data"] = db["users"][user];
   } else {
     res["res"] = "User does not exist";
   }
 
-  Send(res, s);
+  Send(res, client_socket);
 }
 
-void SendFileToClient(string& user, string& filename, int cur_pos, socket& s) {
+void SendFileToClient(string &user, string &filename, int cur_pos, socket &client_socket, socket &broker_socket) {
   json res;
   string _filename;
 
-  if (db[user] == nullptr) {
+  if (db["users"][user] == nullptr) {
     res["res"] = "User does not exist";
   } else {
-    vector<string> _f = db[user];
+    vector<string> _f = db["users"][user];
     if (find(_f.begin(), _f.end(), filename) == _f.end()) {
       res["res"] = "File does not exist";
     } else {
@@ -78,13 +82,13 @@ void SendFileToClient(string& user, string& filename, int cur_pos, socket& s) {
     }
   }
 
-  Send(res, s);
+  Send(res, client_socket);
 }
 
-void GetFileFromClient(string& user, string& filename, string& file, bool first_time, socket& s) {
+void GetFileFromClient(string& user, string& filename, string& file, bool first_time, socket& client_socket, socket &broker_socket) {
   json res;
 
-  if (db[user] == nullptr) {
+  if (db["users"][user] == nullptr) {
     res["res"] = "User does not exist";
   } else {
     string _filename = "fs/" + user + "/" + filename;
@@ -93,24 +97,24 @@ void GetFileFromClient(string& user, string& filename, string& file, bool first_
     if (!save) {
       res["res"] = "Error writing file";
     } else {
-      vector<string> _f = db[user];
+      vector<string> _f = db["users"][user];
       if (find(_f.begin(), _f.end(), filename) == _f.end())
-        db[user].push_back(filename);
+        db["users"][user].push_back(filename);
       res["res"] = "OK";
       UpdateDb();
     }
   }
 
-  Send(res, s);
+  Send(res, client_socket);
 }
 
-void RemoveFile(string& user, string& filename ,socket& s) {
+void RemoveFile(string& user, string& filename, socket& client_socket, socket &broker_socket) {
   json res;
 
-  if (db[user] == nullptr) {
+  if (db["users"][user] == nullptr) {
     res["res"] = "User does not exist";
   } else {
-    vector<string> _f = db[user];
+    vector<string> _f = db["users"][user];
     if (find(_f.begin(), _f.end(), filename) == _f.end()) {
       res["res"] = "File does not exist";
     } else {
@@ -119,14 +123,14 @@ void RemoveFile(string& user, string& filename ,socket& s) {
       if (removed != 0) {
         res["res"] = "Error removing file!";
       } else {
-        db[user].erase(remove(db[user].begin(), db[user].end(), filename), db[user].end());
+        db["users"][user].erase(remove(db["users"][user].begin(), db["users"][user].end(), filename), db["users"][user].end());
         UpdateDb();
         res["res"] = "File removed!";
       }
     }
   }
 
-  Send(res, s);
+  Send(res, client_socket);
 }
 
 #endif

@@ -13,11 +13,16 @@ void InitDb() {
   ifstream fin("db.json");
   if (!fin) {
     ofstream fout("db.json");
-    fout << "{}" << endl;
+    fout << R"({"users":{},"servers":{}})" << endl;
     fout.close();
 
-    system("rm -rf fs");
-    system("mkdir fs");
+    int err;
+    err = system("rm -rf fs");
+    err = system("mkdir fs");
+    if (err == -1) {
+      cout << "Couldn't init DB" << endl;
+      exit(EXIT_FAILURE);
+    }
     db = json::object();
   } else {
     fin >> db;
