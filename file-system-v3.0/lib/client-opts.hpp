@@ -27,8 +27,8 @@ void ListFiles(string &user, socket &s) {
 
   if (res["res"] == "OK") {
     cout << "Your files are:" << endl;
-    for (auto &f : res["data"]) {
-      cout << f << endl;
+    for (json::iterator it = res["data"].begin(); it != res["data"].end(); ++it) {
+      cout << "* " << it.key() << endl;
     }
   } else {
     cout << res["res"] << endl;
@@ -69,7 +69,8 @@ void GetFileFromServer(string &user, string &filename, socket &s) {
 
 void SendFileToServer(string &user, string &filename, socket &s) {
   string server_response = "File created!";
-  int cur_pos = 0, file_size = GetFileSize(filename);
+  int cur_pos = 0;
+  size_t file_size = GetFileSize(filename);
   bool finished;
   do {
     json open_file = ReadFileBase64(filename, cur_pos);
@@ -87,7 +88,7 @@ void SendFileToServer(string &user, string &filename, socket &s) {
     req["filename"] = basename(_fn);
     req["file"] = file;
     req["firstTime"] = (cur_pos == 0);
-
+    req["filesize"] = file_size;
     cur_pos = open_file["curPos"];
     finished = open_file["finished"];
 
