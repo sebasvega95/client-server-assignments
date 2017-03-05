@@ -11,7 +11,7 @@ using namespace std;
 using json = nlohmann::json;
 
 size_t GetDiskSpace() {
-  FILE *command = popen(R"(df . | grep -oP '\d+(?=%)')", "r");
+  FILE *command = popen(R"(df . | tail -1 | awk '{print $3}')", "r");
   if (!command) {
     return -1;
   }
