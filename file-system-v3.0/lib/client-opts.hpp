@@ -8,6 +8,7 @@
 #include <regex>
 #include <zmqpp/zmqpp.hpp>
 #include "constants.hpp"
+#include "dispatcher.hpp"
 #include "file.hpp"
 #include "json.hpp"
 
@@ -20,15 +21,9 @@ void ListFiles(string &user, socket &s) {
   req["type"] = LS_REQ;
   req["user"] = user;
 
-  message m;
-  m << req.dump();
-  s.send(m);
+  Send(req, s);
 
-  message ans;
-  s.receive(ans);
-  string _res;
-  ans >> _res;
-  json res = json::parse(_res);
+  json res = Receive(s);
 
   if (res["res"] == "OK") {
     cout << "Your files are:" << endl;
@@ -50,15 +45,9 @@ void GetFileFromServer(string &user, string &filename, socket &s) {
     req["filename"] = filename;
     req["curPos"] = cur_pos;
 
-    message m;
-    m << req.dump();
-    s.send(m);
+    Send(req, s);
 
-    message ans;
-    s.receive(ans);
-    string _res;
-    ans >> _res;
-    json res = json::parse(_res);
+    json res = Receive(s);
 
     if (res["res"] == "OK") {
       string file = res["file"];
@@ -102,14 +91,9 @@ void SendFileToServer(string &user, string &filename, socket &s) {
     cur_pos = open_file["curPos"];
     finished = open_file["finished"];
 
-    message m;
-    m << req.dump();
-    s.send(m);
-    message ans;
-    s.receive(ans);
-    string _res;
-    ans >> _res;
-    json res = json::parse(_res);
+    Send(req, s);
+
+    json res = Receive(s);
 
     if (res["res"] != "OK") {
       server_response = res["res"];
@@ -128,15 +112,9 @@ void RemoveFile(string &user, string &filename, socket &s) {
   req["user"] = user;
   req["filename"] = filename;
 
-  message m;
-  m << req.dump();
-  s.send(m);
+  Send(req, s);
 
-  message ans;
-  s.receive(ans);
-  string _res;
-  ans >> _res;
-  json res = json::parse(_res);
+  json res = Receive(s);
 
   if (res["res"] == "OK") {
     cout << "File removed!" << endl;
