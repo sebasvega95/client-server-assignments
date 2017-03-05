@@ -52,7 +52,7 @@ bool ExecuteOpt(int opt, string &user, socket &broker_socket) {
   socket server_socket(ctx, socket_type::req);
   string filename;
 
-  if (opt != LS_REQ) {
+  if (opt != LS_REQ  && opt != 0) {
     cout << "Enter filename: ";
     cin >> filename;
 
