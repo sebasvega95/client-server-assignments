@@ -18,10 +18,9 @@ json servers_index, servers_dir;
 
 void ListFiles(string& user, socket &s) {
   json res;
-
   if (db["users"][user] != nullptr) {
     res["res"] = "OK";
-    res["data"] = db["users"][user]; // TODO: data is a vector??
+    res["data"] = db["users"][user];
   } else {
     res["res"] = "User does not exist";
   }
@@ -35,14 +34,14 @@ size_t GetServerPriority(size_t load, size_t disk_space) {
 
 void InitUser(string& user, socket &s) {
   json res;
-
+  cout << "Initializing user " << user << endl;
   if (db["users"][user] != nullptr) {
     system(("mkdir fs/" + user).c_str());
     res["res"] = "OK";
   } else {
     regex r("[a-zA-Z]\\w*");
     if (regex_match(user, r)) {
-      db["users"][user] = {};
+      db["users"][user] = json::object();
       system(("mkdir fs/" + user).c_str());
       res["res"] = "OK";
       UpdateDb();
@@ -73,7 +72,7 @@ void HandleClient(json& req, socket& s) {
         res["res"] = "User does not exist";
       } else {
         string server;
-        if (db["users"][user][filename] != nullptr) {
+        if (db["users"][user][filename] == nullptr) {
           int best_index = server_queue.minIndex();
           server = servers_dir[best_index];
           db["users"][user][filename] = server;
@@ -106,7 +105,7 @@ void HandleClient(json& req, socket& s) {
     }
     case RM_REQ: {
       json res;
-      string filename = res["filename"];
+      string filename = req["filename"];
       if (db["users"][user] == nullptr) {
         res["res"] = "User does not exist";
       } else {
@@ -140,9 +139,12 @@ void InitServer(string &server, size_t disk_space, socket &s) {
   Send(res, s);
 }
 
-void UpdateServerPriority(string &server, size_t load, size_t disk_space) {
+void UpdateServerPriority(string &server, size_t load, size_t disk_space, socket &s) {
   size_t priority = GetServerPriority(load, disk_space);
   server_queue.changeKey(servers_index[server], priority);
+  json res;
+  res["res"] = "OK";
+  Send(res, s);
 }
 
 void HandleServer(json& req, socket& s) {
@@ -151,11 +153,10 @@ void HandleServer(json& req, socket& s) {
     size_t disk_space = req["disk"];
     InitServer(server, disk_space, s);
   } else { // UPDATE_SERVER_REQ
-    json req = Receive(s);
     string server = req["dir"];
     size_t load = req["load"];
     size_t disk_space = req["disk"];
-    UpdateServerPriority(server, load, disk_space);
+    UpdateServerPriority(server, load, disk_space, s);
   }
 }
 

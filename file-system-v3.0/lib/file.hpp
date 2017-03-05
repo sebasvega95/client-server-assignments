@@ -19,8 +19,8 @@ size_t GetDiskSpace() {
   char buffer[5];
   char *line_p = fgets(buffer, sizeof(buffer), command);
   pclose(command);
-
-  return 100 - atoi(line_p);
+  size_t space = atoi(line_p);
+  return space;
 }
 
 size_t GetFileSize(string& filename) {
@@ -78,13 +78,11 @@ bool SaveFileBase64(string& filename, string& file, bool first_time) {
   string out;
   b64.Decode(file, &out);
   ofstream fout;
-
   if (first_time) {
     fout.open(filename);
   } else {
     fout.open(filename, ios::app);
   }
-
   if (!fout) {
     return false;
   }
