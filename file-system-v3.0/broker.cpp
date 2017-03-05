@@ -21,7 +21,7 @@ void ListFiles(string& user, socket &s) {
 
   if (db["users"][user] != nullptr) {
     res["res"] = "OK";
-    res["data"] = db["users"][user];
+    res["data"] = db["users"][user]; // TODO: data is a vector??
   } else {
     res["res"] = "User does not exist";
   }
@@ -55,29 +55,75 @@ void InitUser(string& user, socket &s) {
 }
 
 void HandleClient(json& req, socket& s) {
+  int opt = req["type"];
   string user = req["user"];
-  if (req["type"] == LS_REQ) {
-    ListFiles(user, s);
-  } else if (req["type"] == SEND_REQ) {
-    int best_index = server_queue.minIndex();
-    string server = servers_dir[best_index];
-    json res;
-    res["res"] = "OK";
-    res["server"] = server;
-    Send(res, s);
-  } else if (req["type"] == NAME_REQ) {
-    InitUser(user, s);
-  } else {
-    string filename = req["filename"];
-    json res;
-    if (db["users"][user][filename] != nullptr) {
-      string server = db["users"][user][filename];
-      res["res"] = "OK";
-      res["server"] = server;
-    } else {
-      res["res"] = "Couldn't locate server";
+  switch (opt) {
+    case NAME_REQ: {
+      InitUser(user, s);
+      break;
     }
-    Send(res, s);
+    case LS_REQ: {
+      ListFiles(user, s);
+      break;
+    }
+    case SEND_REQ: {
+      string filename = req["filename"];
+      json res;
+      if (db["users"][user] == nullptr) {
+        res["res"] = "User does not exist";
+      } else {
+        string server;
+        if (db["users"][user][filename] != nullptr) {
+          int best_index = server_queue.minIndex();
+          server = servers_dir[best_index];
+          db["users"][user][filename] = server;
+          UpdateDb();
+        } else { // file already exist so overwrite file in the server it was
+          server = db["users"][user][filename];
+        }
+        res["res"] = "OK";
+        res["server"] = server;
+      }
+      Send(res, s);
+      break;
+    }
+    case GET_REQ: {
+      string filename = req["filename"];
+      string server;
+      json res;
+      if (db["users"][user] == nullptr) {
+        res["res"] = "User does not exist";
+      } else {
+        if (db["users"][user][filename] == nullptr) {
+          res["res"] = "File does not exist";
+        } else {
+          res["res"] = "OK";
+          res["server"] = db["users"][user][filename];
+        }
+      }
+      Send(res, s);
+      break;
+    }
+    case RM_REQ: {
+      json res;
+      string filename = res["filename"];
+      if (db["users"][user] == nullptr) {
+        res["res"] = "User does not exist";
+      } else {
+        if (db["users"][user][filename] == nullptr) {
+          res["res"] = "File does not exist";
+        } else {
+          res["res"] = "OK";
+          res["server"] = db["users"][user][filename];
+          db["users"][user].erase(filename);
+          UpdateDb();
+        }
+      }
+      Send(res, s);
+      break;
+    }
+    default:
+      break;
   }
 }
 
