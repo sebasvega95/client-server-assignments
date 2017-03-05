@@ -22,16 +22,10 @@ string GetName(socket &broker_socket) {
     req["type"] = NAME_REQ;
     req["user"] = name;
 
-    message m;
-    m << req.dump();
-    broker_socket.send(m);
+    Send(req, broker_socket);
 
     cout << "Waiting response" << endl;
-    message ans;
-    broker_socket.receive(ans);
-    string _res;
-    ans >> _res;
-    json res = json::parse(_res);
+    json res = Receive(broker_socket);
 
     ok = res["res"] == "OK";
     if (!ok) {

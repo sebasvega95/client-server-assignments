@@ -3,7 +3,6 @@
 #include <zmqpp/zmqpp.hpp>
 #include "lib/base64.hpp"
 #include "lib/constants.hpp"
-#include "lib/db.hpp"
 #include "lib/file.hpp"
 #include "lib/json.hpp"
 #include "lib/server-opts.hpp"
@@ -31,12 +30,6 @@ void RespondToReq(json& req, socket &client_socket, socket &broker_socket) {
   string user = req["user"];
 
   switch (opt) {
-    // case NAME_REQ:
-    //   InitUser(user, client_socket, broker_socket);
-    //   break;
-    // case LS_REQ:
-    //   ListFiles(user, client_socket, broker_socket);
-    //   break;
     case GET_REQ: { // Client wants to get a file
       string filename = req["filename"];
       int cur_pos = req["curPos"];
@@ -72,11 +65,7 @@ void RespondToReq(json& req, socket &client_socket, socket &broker_socket) {
 }
 
 void GetReq(socket &client_socket, socket &broker_socket) {
-  message m;
-  client_socket.receive(m);
-  string _req;
-  m >> _req;
-  json req = json::parse(_req);
+  json req = Receive(client_socket);
   cout << "Received request " << req["type"] << " from " << req["user"] << endl;
 
   RespondToReq(req, client_socket, broker_socket);
