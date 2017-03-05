@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <libgen.h>
 #include <zmqpp/zmqpp.hpp>
 #include "lib/dispatcher.hpp"
 #include "lib/client-opts.hpp"
@@ -22,16 +23,10 @@ string GetName(socket &broker_socket) {
     req["type"] = NAME_REQ;
     req["user"] = name;
 
-    message m;
-    m << req.dump();
-    broker_socket.send(m);
+    Send(req, broker_socket);
 
     cout << "Waiting response" << endl;
-    message ans;
-    broker_socket.receive(ans);
-    string _res;
-    ans >> _res;
-    json res = json::parse(_res);
+    json res = Receive(broker_socket);
 
     ok = res["res"] == "OK";
     if (!ok) {
@@ -57,20 +52,23 @@ bool ExecuteOpt(int opt, string &user, socket &broker_socket) {
   socket server_socket(ctx, socket_type::req);
   string filename;
 
-  if (opt != LS_REQ) {
+  if (opt != LS_REQ  && opt != 0) {
     cout << "Enter filename: ";
     cin >> filename;
 
     json req;
+    char _fn[256];
+    strcpy(_fn, filename.c_str());
+    req["filename"] = basename(_fn);
     req["type"] = opt;
     req["user"] = user;
-    req["filename"] = filename;
 
     Send(req, broker_socket);
     json res = Receive(broker_socket);
     if (res["res"] == "OK") {
       string server_dir = res["server"];
       server_socket.connect("tcp://" + server_dir);
+      cout << "Connected to server " << endl;
     } else {
       cout << res["res"] << endl;
     }

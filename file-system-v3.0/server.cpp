@@ -3,7 +3,6 @@
 #include <zmqpp/zmqpp.hpp>
 #include "lib/base64.hpp"
 #include "lib/constants.hpp"
-#include "lib/db.hpp"
 #include "lib/file.hpp"
 #include "lib/json.hpp"
 #include "lib/server-opts.hpp"
@@ -19,26 +18,20 @@ void UpdateServerPriority(socket &broker_socket) {
   req["load"] = cur_load;
   req["disk"] = GetDiskSpace();
   Send(req, broker_socket);
-
   json res = Receive(broker_socket);
   if (res["res"] == "OK") {
     cout << "Broker state updated with load=" << cur_load << " and disk=" << req["disk"] << endl;
+  } else {
+    cout << res["res"] << endl;
   }
 }
 
 void RespondToReq(json& req, socket &client_socket, socket &broker_socket) {
   int opt = req["type"];
   string user = req["user"];
-
+  string filename = req["filename"];
   switch (opt) {
-    // case NAME_REQ:
-    //   InitUser(user, client_socket, broker_socket);
-    //   break;
-    // case LS_REQ:
-    //   ListFiles(user, client_socket, broker_socket);
-    //   break;
     case GET_REQ: { // Client wants to get a file
-      string filename = req["filename"];
       int cur_pos = req["curPos"];
       size_t file_size = GetFileSize(filename);
       cur_load += file_size;
@@ -49,10 +42,9 @@ void RespondToReq(json& req, socket &client_socket, socket &broker_socket) {
       break;
     }
     case SEND_REQ: { // Client sends a file
-      string filename = req["filename"];
       string file = req["file"];
       bool first_time = req["firstTime"];
-      size_t file_size = req["fileSize"];
+      size_t file_size = req["filesize"];
       cur_load += file_size;
       UpdateServerPriority(broker_socket);
       GetFileFromClient(user, filename, file, first_time, client_socket, broker_socket);
@@ -61,7 +53,6 @@ void RespondToReq(json& req, socket &client_socket, socket &broker_socket) {
       break;
     }
     case RM_REQ: { // Client removes a file
-      string filename = req["filename"];
       RemoveFile(user, filename, client_socket, broker_socket);
       UpdateServerPriority(broker_socket);
       break;
@@ -72,11 +63,7 @@ void RespondToReq(json& req, socket &client_socket, socket &broker_socket) {
 }
 
 void GetReq(socket &client_socket, socket &broker_socket) {
-  message m;
-  client_socket.receive(m);
-  string _req;
-  m >> _req;
-  json req = json::parse(_req);
+  json req = Receive(client_socket);
   cout << "Received request " << req["type"] << " from " << req["user"] << endl;
 
   RespondToReq(req, client_socket, broker_socket);
@@ -88,7 +75,7 @@ void Serve(string &ip, string &port, socket &broker_socket) {
   context ctx;
   socket client_socket(ctx, socket_type::rep);
   client_socket.bind("tcp://*:" + port);
-  cout << "Waiting for requests" << endl;
+  cout << "Waiting for clint requests" << endl;
 
   while (true) {
     GetReq(client_socket, broker_socket);

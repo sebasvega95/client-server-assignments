@@ -8,6 +8,7 @@
 #include <regex>
 #include <zmqpp/zmqpp.hpp>
 #include "constants.hpp"
+#include "dispatcher.hpp"
 #include "file.hpp"
 #include "json.hpp"
 
@@ -20,20 +21,14 @@ void ListFiles(string &user, socket &s) {
   req["type"] = LS_REQ;
   req["user"] = user;
 
-  message m;
-  m << req.dump();
-  s.send(m);
+  Send(req, s);
 
-  message ans;
-  s.receive(ans);
-  string _res;
-  ans >> _res;
-  json res = json::parse(_res);
+  json res = Receive(s);
 
   if (res["res"] == "OK") {
     cout << "Your files are:" << endl;
-    for (auto &f : res["data"]) {
-      cout << f << endl;
+    for (json::iterator it = res["data"].begin(); it != res["data"].end(); ++it) {
+      cout << "* " << it.key() << endl;
     }
   } else {
     cout << res["res"] << endl;
@@ -50,15 +45,9 @@ void GetFileFromServer(string &user, string &filename, socket &s) {
     req["filename"] = filename;
     req["curPos"] = cur_pos;
 
-    message m;
-    m << req.dump();
-    s.send(m);
+    Send(req, s);
 
-    message ans;
-    s.receive(ans);
-    string _res;
-    ans >> _res;
-    json res = json::parse(_res);
+    json res = Receive(s);
 
     if (res["res"] == "OK") {
       string file = res["file"];
@@ -80,7 +69,8 @@ void GetFileFromServer(string &user, string &filename, socket &s) {
 
 void SendFileToServer(string &user, string &filename, socket &s) {
   string server_response = "File created!";
-  int cur_pos = 0, file_size = GetFileSize(filename);
+  int cur_pos = 0;
+  size_t file_size = GetFileSize(filename);
   bool finished;
   do {
     json open_file = ReadFileBase64(filename, cur_pos);
@@ -98,18 +88,13 @@ void SendFileToServer(string &user, string &filename, socket &s) {
     req["filename"] = basename(_fn);
     req["file"] = file;
     req["firstTime"] = (cur_pos == 0);
-
+    req["filesize"] = file_size;
     cur_pos = open_file["curPos"];
     finished = open_file["finished"];
 
-    message m;
-    m << req.dump();
-    s.send(m);
-    message ans;
-    s.receive(ans);
-    string _res;
-    ans >> _res;
-    json res = json::parse(_res);
+    Send(req, s);
+
+    json res = Receive(s);
 
     if (res["res"] != "OK") {
       server_response = res["res"];
@@ -128,15 +113,9 @@ void RemoveFile(string &user, string &filename, socket &s) {
   req["user"] = user;
   req["filename"] = filename;
 
-  message m;
-  m << req.dump();
-  s.send(m);
+  Send(req, s);
 
-  message ans;
-  s.receive(ans);
-  string _res;
-  ans >> _res;
-  json res = json::parse(_res);
+  json res = Receive(s);
 
   if (res["res"] == "OK") {
     cout << "File removed!" << endl;
