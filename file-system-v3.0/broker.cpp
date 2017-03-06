@@ -32,6 +32,14 @@ size_t GetServerPriority(size_t load, size_t disk_space) {
   return (size_t) (0.5 * load + 0.5 * disk_space);
 }
 
+void Login(string &user, string& password, socket &s) {
+  // TODO
+}
+
+void Signup(string &user, string& password, socket &s) {
+  // TODO
+}
+
 void InitUser(string& user, socket &s) {
   json res;
   cout << "Initializing user " << user << endl;
@@ -57,6 +65,14 @@ void HandleClient(json& req, socket& s) {
   int opt = req["type"];
   string user = req["user"];
   switch (opt) {
+    case LOGIN_OPT: {
+      string password = req["password"];
+      Login(user, password, s);
+    }
+    case SIGNUP_OPT: {
+      string password = req["password"];
+      Signup(user, password, s);
+    }
     case NAME_REQ: {
       InitUser(user, s);
       break;

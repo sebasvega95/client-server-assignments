@@ -11,32 +11,6 @@ using namespace std;
 using namespace zmqpp;
 using json = nlohmann::json;
 
-string GetName(socket &broker_socket) {
-  regex r("[a-zA-Z]\\w*");
-  string name;
-
-  bool ok;
-  do {
-    cout << "Username: ";
-    getline(cin, name);
-    json req;
-    req["type"] = NAME_REQ;
-    req["user"] = name;
-
-    Send(req, broker_socket);
-
-    cout << "Waiting response" << endl;
-    json res = Receive(broker_socket);
-
-    ok = res["res"] == "OK";
-    if (!ok) {
-      cout << "Invalid name" << endl << endl;
-    }
-  } while(!ok);
-
-  return name;
-}
-
 int GetOption(string &opt) {
   stringstream ss(opt);
   int o;
@@ -116,6 +90,61 @@ bool PrintMenu(string &user, socket &broker_socket) {
   return ExecuteOpt(opt, user, broker_socket);
 }
 
+string GetCredentials(int type, socket &broker_socket) {
+  string name, password;
+
+  do {
+    cout << "Username: ";
+    getline(cin, name);
+    cout << endl << "Password: ";
+    getline(cin, password);
+
+    if (ValidateCredentials(name, password, type, broker_socket)) {
+      break;
+    }
+  } while(true);
+
+  return name;
+}
+
+string HomeMenu(socket &brocker_socket) {
+  string user = "";
+  do {
+    cout << endl << endl;
+    cout << "1. Login" << endl;
+    cout << "2. Signup" << endl;
+    cout << "0. Exit" << endl;
+    string _opt;
+    cin >> _opt;
+    int opt = GetOption(_opt);
+    cout << endl;
+
+    switch (opt) {
+      case 1 : {
+        user = GetCredentials(LOGIN_OPT, brocker_socket);
+      }
+      case 2: {
+        user = GetCredentials(SIGNUP_OPT, brocker_socket);
+      }
+      case 0: {
+        cout << endl << "Bye bye!!" << endl;
+        user = "";
+        break;
+      }
+      default: {
+        cout << "Invalid option" << endl;
+        continue;
+      }
+
+      if (user != "")
+        break;
+      else
+        cout << "Invalid credentials" << endl;
+    }
+  } while (true);
+  return user;
+}
+
 int main(int argc, const char *argv[]) {
   if (argc != 2) {
     cout << "Usage: " << argv[0] << " <broker-ip>" << endl;
@@ -125,7 +154,11 @@ int main(int argc, const char *argv[]) {
     socket broker_socket(ctx, socket_type::req);
     broker_socket.connect("tcp://" + ip + ":" + port);
 
-    string user = GetName(broker_socket);
+    string user = HomeMenu(broker_socket);
+    if (user == "") {
+       return 0;
+    }
+
     cout << endl;
     cout << "Welcome " << user << " to SuperFancy FileSystem (SFFS)" << endl;
     bool cont;

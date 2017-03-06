@@ -8,6 +8,8 @@ const int SEND_REQ = 3; // Client wants to send a file to server
 const int RM_REQ = 4; // Client wants to remove a file from server
 const int INIT_SERVER_REQ = 5;
 const int UPDATE_SERVER_REQ = 6;
+const int LOGIN_OPT = 7;
+const int SIGNUP_OPT = 8;
 const int CHUNK_SIZE = 524288; // 512 KiB
 const int MAX_NUM_SERVERS = 256;
 

@@ -16,6 +16,23 @@ using namespace std;
 using namespace zmqpp;
 using json = nlohmann::json;
 
+
+bool ValidateCredentials(string &user, string &passwd, int type, socket &broker_socket) {
+  json req;
+  req["type"] = type;
+  req["user"] = user;
+  req["password"] = passwd;
+
+  Send(req, broker_socket);
+
+  cout << "Waiting authentication" << endl;
+  json res = Receive(broker_socket);
+  if (res["res"] != "OK") {
+    cout << res["res"] << endl;
+  }
+  return res["res"] == "OK";
+}
+
 void ListFiles(string &user, socket &s) {
   json req;
   req["type"] = LS_REQ;
