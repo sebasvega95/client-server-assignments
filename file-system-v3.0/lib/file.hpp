@@ -19,7 +19,7 @@ size_t GetDiskSpace() {
   char buffer[5];
   char *line_p = fgets(buffer, sizeof(buffer), command);
   pclose(command);
-  size_t space = atoi(line_p);
+  size_t space = atoll(line_p);
   return space;
 }
 
