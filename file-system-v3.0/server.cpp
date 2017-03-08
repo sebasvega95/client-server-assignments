@@ -92,6 +92,7 @@ void ConnectToBroker(string &ip, string &port, socket &broker_socket) {
   json res = Receive(broker_socket);
   if (res["res"] == "OK") {
     cout << "Connected to broker" << endl;
+    system("mkdir fs");
     Serve(ip, port, broker_socket);
   } else {
     cout << "Couldn't connect to broker" << endl;

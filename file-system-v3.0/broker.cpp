@@ -36,13 +36,11 @@ void InitUser(string& user, socket &s) {
   json res;
   cout << "Initializing user " << user << endl;
   if (db["users"][user] != nullptr) {
-    system(("mkdir fs/" + user).c_str());
     res["res"] = "OK";
   } else {
     regex r("[a-zA-Z]\\w*");
     if (regex_match(user, r)) {
       db["users"][user] = json::object();
-      system(("mkdir fs/" + user).c_str());
       res["res"] = "OK";
       UpdateDb();
     } else {

@@ -35,6 +35,7 @@ void SendFileToClient(string &user, string &filename, int cur_pos, socket &clien
 void GetFileFromClient(string& user, string& filename, string& file, bool first_time, socket& client_socket, socket &broker_socket) {
   json res;
   string _filename = "fs/" + user + "/" + filename;
+  system(("mkdir fs/" + user).c_str());
   bool save = SaveFileBase64(_filename, file, first_time);
 
   if (!save) {
